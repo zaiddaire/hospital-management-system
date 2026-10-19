@@ -17,6 +17,7 @@ router.get('/dashboard', authenticate, authorize('ADMIN'), async (req, res) => {
       const [[{ pendingAppointments }]] = await pool.query("SELECT COUNT(*) as pendingAppointments FROM appointments WHERE status = 'PENDING'");
       const [[{ completedAppointments }]] = await pool.query("SELECT COUNT(*) as completedAppointments FROM appointments WHERE status = 'COMPLETED'");
       const [[{ totalDepartments }]] = await pool.query('SELECT COUNT(*) as totalDepartments FROM departments WHERE is_active = true');
+      const [[{ todayRevenue }]] = await pool.query("SELECT COALESCE(SUM(amount),0) as todayRevenue FROM bills WHERE payment_status = 'PAID' AND DATE(bill_date) = CURDATE()");
 
       return res.json({
         totalDoctors: Number(totalDoctors),
@@ -25,8 +26,13 @@ router.get('/dashboard', authenticate, authorize('ADMIN'), async (req, res) => {
         pendingAppointments: Number(pendingAppointments),
         completedAppointments: Number(completedAppointments),
         totalDepartments: Number(totalDepartments),
+        todayRevenue: Number(todayRevenue),
       });
     } else {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const todayRevenue = memoryStore.bills
+        .filter(b => b.payment_status === 'PAID' && b.bill_date === todayStr)
+        .reduce((sum, b) => sum + Number(b.amount || 0), 0);
       return res.json({
         totalDoctors: memoryStore.doctors.filter(d => d.is_active).length,
         totalPatients: memoryStore.patients.length,
@@ -34,8 +40,10 @@ router.get('/dashboard', authenticate, authorize('ADMIN'), async (req, res) => {
         pendingAppointments: memoryStore.appointments.filter(a => a.status === 'PENDING').length,
         completedAppointments: memoryStore.appointments.filter(a => a.status === 'COMPLETED').length,
         totalDepartments: memoryStore.departments.filter(d => d.is_active).length,
+        todayRevenue,
       });
     }
+
   } catch (err) {
     console.error('[ADMIN] Dashboard stats error:', err);
     return res.status(500).json({ message: 'Failed to fetch dashboard statistics' });

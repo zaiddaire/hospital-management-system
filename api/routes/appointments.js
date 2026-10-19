@@ -27,23 +27,66 @@ const APPT_SELECT_SQL = `
   LEFT JOIN departments dep ON d.department_id = dep.id
 `;
 
-// GET /api/appointments (ADMIN only)
-router.get('/', authenticate, authorize('ADMIN'), async (req, res) => {
+// GET /api/appointments (ADMIN, DOCTOR, or PATIENT)
+router.get('/', authenticate, async (req, res) => {
   await initializeDatabase();
   const pool = await getPool();
+  const user = req.user;
 
   try {
     if (pool) {
-      const [rows] = await pool.query(`${APPT_SELECT_SQL} ORDER BY a.appointment_date DESC, a.appointment_time DESC`);
-      return res.json(rows.map(mapAppointment));
+      if (user.role === 'ADMIN') {
+        const [rows] = await pool.query(`${APPT_SELECT_SQL} ORDER BY a.appointment_date DESC, a.appointment_time DESC`);
+        return res.json(rows.map(mapAppointment));
+      } else if (user.role === 'DOCTOR') {
+        const [docs] = await pool.query('SELECT id FROM doctors WHERE user_id = ?', [user.userId]);
+        const doctorId = docs.length > 0 ? docs[0].id : 0;
+        const [rows] = await pool.query(`${APPT_SELECT_SQL} WHERE a.doctor_id = ? ORDER BY a.appointment_date DESC, a.appointment_time DESC`, [doctorId]);
+        return res.json(rows.map(mapAppointment));
+      } else if (user.role === 'PATIENT') {
+        const [pats] = await pool.query('SELECT id FROM patients WHERE user_id = ?', [user.userId]);
+        const patientId = pats.length > 0 ? pats[0].id : 0;
+        const [rows] = await pool.query(`${APPT_SELECT_SQL} WHERE a.patient_id = ? ORDER BY a.appointment_date DESC, a.appointment_time DESC`, [patientId]);
+        return res.json(rows.map(mapAppointment));
+      } else {
+        return res.status(403).json({ message: 'Access denied' });
+      }
     } else {
-      const rows = memoryStore.appointments.map(a => {
-        const p = memoryStore.patients.find(pat => pat.id === a.patient_id);
-        const d = memoryStore.doctors.find(doc => doc.id === a.doctor_id);
-        const dep = d ? memoryStore.departments.find(dept => dept.id === d.department_id) : null;
-        return mapAppointment({ ...a, patient_name: p?.full_name, doctor_name: d?.full_name, department_name: dep?.name });
-      });
-      return res.json(rows);
+      if (user.role === 'ADMIN') {
+        const rows = memoryStore.appointments.map(a => {
+          const p = memoryStore.patients.find(pat => pat.id === a.patient_id);
+          const d = memoryStore.doctors.find(doc => doc.id === a.doctor_id);
+          const dep = d ? memoryStore.departments.find(dept => dept.id === d.department_id) : null;
+          return mapAppointment({ ...a, patient_name: p?.full_name, doctor_name: d?.full_name, department_name: dep?.name });
+        });
+        return res.json(rows);
+      } else if (user.role === 'DOCTOR') {
+        const doc = memoryStore.doctors.find(d => d.user_id === user.userId);
+        const doctorId = doc ? doc.id : 0;
+        const rows = memoryStore.appointments
+          .filter(a => a.doctor_id === doctorId)
+          .map(a => {
+            const p = memoryStore.patients.find(pat => pat.id === a.patient_id);
+            const d = memoryStore.doctors.find(doctor => doctor.id === a.doctor_id);
+            const dep = d ? memoryStore.departments.find(dept => dept.id === d.department_id) : null;
+            return mapAppointment({ ...a, patient_name: p?.full_name, doctor_name: d?.full_name, department_name: dep?.name });
+          });
+        return res.json(rows);
+      } else if (user.role === 'PATIENT') {
+        const pat = memoryStore.patients.find(p => p.user_id === user.userId);
+        const patientId = pat ? pat.id : 0;
+        const rows = memoryStore.appointments
+          .filter(a => a.patient_id === patientId)
+          .map(a => {
+            const p = memoryStore.patients.find(patient => patient.id === a.patient_id);
+            const d = memoryStore.doctors.find(doctor => doctor.id === a.doctor_id);
+            const dep = d ? memoryStore.departments.find(dept => dept.id === d.department_id) : null;
+            return mapAppointment({ ...a, patient_name: p?.full_name, doctor_name: d?.full_name, department_name: dep?.name });
+          });
+        return res.json(rows);
+      } else {
+        return res.status(403).json({ message: 'Access denied' });
+      }
     }
   } catch (err) {
     console.error('[APPOINTMENTS] Error:', err);
@@ -51,7 +94,6 @@ router.get('/', authenticate, authorize('ADMIN'), async (req, res) => {
   }
 });
 
-// GET /api/appointments/doctor/:doctorId
 router.get('/doctor/:doctorId', authenticate, async (req, res) => {
   await initializeDatabase();
   const doctorId = Number(req.params.doctorId);
@@ -130,7 +172,23 @@ router.get('/:id', authenticate, async (req, res) => {
 // POST /api/appointments (Book appointment)
 router.post('/', authenticate, async (req, res) => {
   await initializeDatabase();
-  const { patientId, doctorId, appointmentDate, appointmentTime, reason } = req.body;
+  let { patientId, doctorId, appointmentDate, appointmentTime, reason } = req.body;
+  const user = req.user;
+
+  const pool = await getPool();
+
+  // Auto-resolve patientId for PATIENT role from their JWT
+  if (!patientId && user.role === 'PATIENT') {
+    try {
+      if (pool) {
+        const [pats] = await pool.query('SELECT id FROM patients WHERE user_id = ?', [user.userId]);
+        if (pats.length > 0) patientId = pats[0].id;
+      } else {
+        const pat = memoryStore.patients.find(p => p.user_id === user.userId);
+        if (pat) patientId = pat.id;
+      }
+    } catch (_) {}
+  }
 
   if (!patientId || !doctorId || !appointmentDate || !appointmentTime) {
     return res.status(400).json({ message: 'Patient, Doctor, Date, and Time are required' });
@@ -138,11 +196,10 @@ router.post('/', authenticate, async (req, res) => {
 
   // Format time as HH:mm:ss
   let formattedTime = appointmentTime;
-  if (formattedTime.length === 5) formattedTime += ':00';
-
-  const pool = await getPool();
+  if (typeof formattedTime === 'string' && formattedTime.length === 5) formattedTime += ':00';
 
   try {
+
     if (pool) {
       // Check for slot conflict on doctor
       const [existing] = await pool.query(

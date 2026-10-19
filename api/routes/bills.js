@@ -24,17 +24,39 @@ const BILL_SELECT_SQL = `
   JOIN patients p ON b.patient_id = p.id
 `;
 
-// GET /api/bills (ADMIN only)
-router.get('/', authenticate, authorize('ADMIN'), async (req, res) => {
+// GET /api/bills (ADMIN: all, PATIENT: their own)
+router.get('/', authenticate, async (req, res) => {
   await initializeDatabase();
   const pool = await getPool();
+  const user = req.user;
 
   try {
     if (pool) {
-      const [rows] = await pool.query(`${BILL_SELECT_SQL} ORDER BY b.bill_date DESC, b.id DESC`);
-      return res.json(rows.map(mapBill));
+      if (user.role === 'ADMIN') {
+        const [rows] = await pool.query(`${BILL_SELECT_SQL} ORDER BY b.bill_date DESC, b.id DESC`);
+        return res.json(rows.map(mapBill));
+      } else if (user.role === 'PATIENT') {
+        const [pats] = await pool.query('SELECT id FROM patients WHERE user_id = ?', [user.userId]);
+        const patientId = pats.length > 0 ? pats[0].id : 0;
+        const [rows] = await pool.query(`${BILL_SELECT_SQL} WHERE b.patient_id = ? ORDER BY b.bill_date DESC`, [patientId]);
+        return res.json(rows.map(mapBill));
+      } else if (user.role === 'DOCTOR') {
+        // Doctors don't manage bills directly; return empty
+        return res.json([]);
+      } else {
+        return res.status(403).json({ message: 'Access denied' });
+      }
     } else {
-      const rows = memoryStore.bills.map(b => {
+      let filteredBills = memoryStore.bills;
+      if (user.role === 'PATIENT') {
+        const pat = memoryStore.patients.find(p => p.user_id === user.userId);
+        filteredBills = filteredBills.filter(b => b.patient_id === (pat ? pat.id : 0));
+      } else if (user.role === 'DOCTOR') {
+        filteredBills = [];
+      } else if (user.role !== 'ADMIN') {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+      const rows = filteredBills.map(b => {
         const p = memoryStore.patients.find(pat => pat.id === b.patient_id);
         return mapBill({ ...b, patient_name: p?.full_name });
       });
@@ -45,6 +67,7 @@ router.get('/', authenticate, authorize('ADMIN'), async (req, res) => {
     return res.status(500).json({ message: 'Failed to fetch bills' });
   }
 });
+
 
 // GET /api/bills/patient/:patientId
 router.get('/patient/:patientId', authenticate, async (req, res) => {

@@ -38,23 +38,48 @@ const RECORD_SELECT_SQL = `
   JOIN doctors d ON m.doctor_id = d.id
 `;
 
-// GET /api/medical-records (ADMIN only)
-router.get('/', authenticate, authorize('ADMIN'), async (req, res) => {
+// GET /api/medical-records (ADMIN: all, DOCTOR: their patients, PATIENT: their own)
+router.get('/', authenticate, async (req, res) => {
   await initializeDatabase();
   const pool = await getPool();
+  const user = req.user;
 
   try {
     if (pool) {
-      const [records] = await pool.query(`${RECORD_SELECT_SQL} ORDER BY m.visit_date DESC`);
-      const [prescriptions] = await pool.query('SELECT * FROM prescriptions');
-
-      const result = records.map(r => {
-        const prescs = prescriptions.filter(p => p.medical_record_id === r.id);
-        return mapRecord(r, prescs);
-      });
-      return res.json(result);
+      if (user.role === 'ADMIN') {
+        const [records] = await pool.query(`${RECORD_SELECT_SQL} ORDER BY m.visit_date DESC`);
+        const [prescriptions] = await pool.query('SELECT * FROM prescriptions');
+        return res.json(records.map(r => {
+          const prescs = prescriptions.filter(p => p.medical_record_id === r.id);
+          return mapRecord(r, prescs);
+        }));
+      } else if (user.role === 'DOCTOR') {
+        const [docs] = await pool.query('SELECT id FROM doctors WHERE user_id = ?', [user.userId]);
+        const doctorId = docs.length > 0 ? docs[0].id : 0;
+        const [records] = await pool.query(`${RECORD_SELECT_SQL} WHERE m.doctor_id = ? ORDER BY m.visit_date DESC`, [doctorId]);
+        const [prescriptions] = await pool.query('SELECT * FROM prescriptions WHERE doctor_id = ?', [doctorId]);
+        return res.json(records.map(r => mapRecord(r, prescriptions.filter(p => p.medical_record_id === r.id))));
+      } else if (user.role === 'PATIENT') {
+        const [pats] = await pool.query('SELECT id FROM patients WHERE user_id = ?', [user.userId]);
+        const patientId = pats.length > 0 ? pats[0].id : 0;
+        const [records] = await pool.query(`${RECORD_SELECT_SQL} WHERE m.patient_id = ? ORDER BY m.visit_date DESC`, [patientId]);
+        const [prescriptions] = await pool.query('SELECT * FROM prescriptions WHERE patient_id = ?', [patientId]);
+        return res.json(records.map(r => mapRecord(r, prescriptions.filter(p => p.medical_record_id === r.id))));
+      } else {
+        return res.status(403).json({ message: 'Access denied' });
+      }
     } else {
-      const result = memoryStore.medical_records.map(r => {
+      let filtered = memoryStore.medical_records;
+      if (user.role === 'DOCTOR') {
+        const doc = memoryStore.doctors.find(d => d.user_id === user.userId);
+        filtered = filtered.filter(r => r.doctor_id === (doc ? doc.id : 0));
+      } else if (user.role === 'PATIENT') {
+        const pat = memoryStore.patients.find(p => p.user_id === user.userId);
+        filtered = filtered.filter(r => r.patient_id === (pat ? pat.id : 0));
+      } else if (user.role !== 'ADMIN') {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+      const result = filtered.map(r => {
         const p = memoryStore.patients.find(pat => pat.id === r.patient_id);
         const d = memoryStore.doctors.find(doc => doc.id === r.doctor_id);
         const prescs = memoryStore.prescriptions.filter(pr => pr.medical_record_id === r.id);
@@ -67,6 +92,7 @@ router.get('/', authenticate, authorize('ADMIN'), async (req, res) => {
     return res.status(500).json({ message: 'Failed to fetch medical records' });
   }
 });
+
 
 // GET /api/medical-records/doctor/:doctorId (ADMIN or DOCTOR)
 router.get('/doctor/:doctorId', authenticate, authorize('ADMIN', 'DOCTOR'), async (req, res) => {
