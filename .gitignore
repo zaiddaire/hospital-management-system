@@ -1,0 +1,59 @@
+# ========================
+# Java / Maven
+# ========================
+backend/target/
+*.class
+*.jar
+*.war
+*.ear
+*.log
+
+# ========================
+# Node / React
+# ========================
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+
+# ========================
+# IDE
+# ========================
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.project
+.classpath
+.settings/
+*.swp
+*.swo
+*~
+.factorypath
+nb-configuration.xml
+nbproject/
+.nb-gradle/
+
+# ========================
+# OS
+# ========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ========================
+# Environment
+# ========================
+.env
+.env.local
+.env.*.local
+
+# ========================
+# Misc
+# ========================
+*.bak
+*.tmp
+*.zip
+

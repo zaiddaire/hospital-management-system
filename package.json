@@ -1,0 +1,21 @@
+{
+  "name": "hospital-management-system",
+  "version": "1.0.0",
+  "description": "Hospital Management System - Full Stack React, Spring Boot / Serverless API, and MySQL",
+  "type": "module",
+  "main": "api/index.js",
+  "scripts": {
+    "build": "npm run build --prefix frontend",
+    "start": "node api/server.js",
+    "dev:api": "node api/server.js",
+    "dev:frontend": "npm run dev --prefix frontend"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.12.0"
+  }
+}
