@@ -368,7 +368,7 @@ router.get('/:id/history', authenticate, async (req, res) => {
       return res.json(rows.map(mapHistory));
     } else {
       const rows = (memoryStore.appointment_history || [])
-        .filter(h => h.appointment_id === id)
+        .filter(h => Number(h.appointment_id) === id)
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       return res.json(rows.map(mapHistory));
     }

@@ -26,6 +26,8 @@ A full-stack, enterprise-grade Hospital Management System built with **Spring Bo
 ### 🧑‍⚕️ Patient Health Portal
 - **Doctor Directory**: Search and browse doctors by specialization and department with fee transparency.
 - **Online Booking**: Schedule appointments with chosen doctors and available time slots.
+- **Smart Appointment Rescheduling**: 10-step guided rescheduling with real-time doctor availability checks, conflict detection, side-by-side schedule comparison, and instant schedule update.
+- **Audit Trail & History**: Complete chronological reschedule history tracking timestamps, changer role, and reasons.
 - **Medical Records**: Access digital prescriptions and clinical diagnoses anytime.
 - **Invoices & Billing**: View itemized hospital bills and payment receipts with printable formatting.
 - **Profile Management**: Update personal health records, blood group, address, and emergency contact details.
@@ -81,6 +83,12 @@ npm run dev
 ```
 Open your browser at `http://localhost:5173`.
 
+### 5. Run Verification Test Suite
+Run the automated end-to-end system test suite:
+```powershell
+node tests/system.test.js
+```
+
 ---
 
 ## 🔑 Default Test Accounts
@@ -117,10 +125,14 @@ All accounts are auto-seeded by `DataInitializer`:
 | `GET` | `/api/departments` | Public | List active hospital departments |
 | `POST` | `/api/departments` | ADMIN | Create new department |
 | `GET` | `/api/appointments` | ADMIN | All hospital appointments |
+| `GET` | `/api/appointments/available-slots` | Authenticated | Available slots generator with schedule parsing |
 | `GET` | `/api/appointments/doctor/{id}` | Authenticated | Doctor's assigned appointments |
 | `GET` | `/api/appointments/patient/{id}` | Authenticated | Patient's scheduled appointments |
+| `GET` | `/api/appointments/{id}/history` | Authenticated | Reschedule audit trail & timeline |
 | `POST` | `/api/appointments` | Authenticated | Schedule an appointment |
+| `POST` | `/api/appointments/{id}/reschedule` | Authenticated | Reschedule appointment with conflict prevention |
 | `PATCH`| `/api/appointments/{id}/status` | ADMIN, DOCTOR | Update appointment status |
+| `DELETE`| `/api/appointments/{id}` | Authenticated | Cancel appointment |
 | `GET` | `/api/medical-records` | ADMIN | All clinical records |
 | `POST` | `/api/medical-records` | ADMIN, DOCTOR | Create diagnosis & prescriptions |
 | `GET` | `/api/bills` | ADMIN | All billing invoices |

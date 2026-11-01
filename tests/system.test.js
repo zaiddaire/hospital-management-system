@@ -67,6 +67,12 @@ function record(suite, testName, passed, details = '') {
 
 async function runTests() {
   console.log('🚀 Starting MedCore HMS Comprehensive Test Suite...');
+  const dataFilePath = path.join(process.cwd(), 'api', 'data', 'hospital_data.json');
+  let originalDataBackup = null;
+  if (fs.existsSync(dataFilePath)) {
+    originalDataBackup = fs.readFileSync(dataFilePath, 'utf8');
+  }
+
   await initializeDatabase();
 
   try {
@@ -312,7 +318,6 @@ async function runTests() {
 
     // 19. Appointment Cancellation
     const cancelRes = await request('DELETE', `/appointments/${appt2Id}`, null, patientToken);
-    console.log('CANCEL RES RESULT:', cancelRes.status, cancelRes.data);
     record('Appointment Cancellation', 'Patient can cancel their pending appointment', cancelRes.status === 204);
 
     // Verify status is CANCELLED
@@ -348,6 +353,13 @@ async function runTests() {
     console.error('Test execution error:', err);
     record('Execution', 'Test script execution without crashing', false, err.message);
   } finally {
+    if (originalDataBackup && fs.existsSync(dataFilePath)) {
+      try {
+        fs.writeFileSync(dataFilePath, originalDataBackup, 'utf8');
+      } catch (e) {
+        // ignore restore error
+      }
+    }
     console.log('\n====================================');
     const total = results.length;
     const passed = results.filter(r => r.passed).length;
