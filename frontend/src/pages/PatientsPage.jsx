@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import {
   Users, Search, Phone, Mail, Droplet, Calendar,
-  MapPin, AlertCircle, Edit2, X, FileText, ArrowRight
+  MapPin, AlertCircle, Edit2, X, FileText, ArrowRight, Eye
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -15,6 +15,7 @@ export default function PatientsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPatient, setSelectedPatient] = useState(null);
+  const [viewPatient, setViewPatient] = useState(null);
   const [editModal, setEditModal] = useState(false);
   const [editForm, setEditForm] = useState({
     fullName: '',
@@ -183,7 +184,15 @@ export default function PatientsPage() {
                       </div>
                     </td>
                     <td>
-                      <div style={{ display: 'flex', gap: '8px' }}>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        <button
+                          className="btn btn-sm btn-secondary"
+                          onClick={() => setViewPatient(pat)}
+                          title="View patient profile"
+                          style={{ padding: '6px 8px' }}
+                        >
+                          <Eye size={14} />
+                        </button>
                         <button
                           className="btn btn-sm btn-secondary"
                           onClick={() => openEditModal(pat)}
@@ -211,6 +220,86 @@ export default function PatientsPage() {
           </div>
         )}
       </div>
+
+      {/* View Patient Modal */}
+      {viewPatient && (
+        <div className="modal-overlay" onClick={() => setViewPatient(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 520 }}>
+            <div className="modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Users size={20} color="var(--primary-400)" />
+                <h3>Patient Profile #{viewPatient.id}</h3>
+              </div>
+              <button className="modal-close" onClick={() => setViewPatient(null)}><X size={18} /></button>
+            </div>
+
+            <div className="modal-body">
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 16,
+                padding: '16px',
+                background: 'rgba(255,255,255,0.03)',
+                borderRadius: 'var(--radius-lg)',
+                marginBottom: '18px'
+              }}>
+                <div className="sidebar-avatar" style={{ width: 56, height: 56, fontSize: 22, flexShrink: 0 }}>
+                  {viewPatient.fullName ? viewPatient.fullName[0].toUpperCase() : 'P'}
+                </div>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '17px', color: 'var(--surface-50)' }}>{viewPatient.fullName}</h4>
+                  <div style={{ fontSize: '13px', color: 'var(--surface-400)', marginTop: 2 }}>
+                    @{viewPatient.username} &bull; {viewPatient.gender}
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--primary-400)', marginTop: 4, fontWeight: 600 }}>
+                    Blood Group: {bloodGroupDisplay(viewPatient.bloodGroup)}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: '13px', color: 'var(--surface-300)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Phone size={15} color="var(--primary-400)" />
+                  <span>Phone: <strong style={{ color: 'var(--surface-100)' }}>{viewPatient.phone || 'Not listed'}</strong></span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Mail size={15} color="var(--primary-400)" />
+                  <span>Email: <strong style={{ color: 'var(--surface-100)' }}>{viewPatient.email || 'Not listed'}</strong></span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Calendar size={15} color="var(--primary-400)" />
+                  <span>Date of Birth: <strong style={{ color: 'var(--surface-100)' }}>{viewPatient.dateOfBirth || 'Not recorded'}</strong></span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                  <MapPin size={15} color="var(--primary-400)" style={{ marginTop: 2 }} />
+                  <span>Residential Address: <strong style={{ color: 'var(--surface-100)' }}>{viewPatient.address || 'No address registered'}</strong></span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <AlertCircle size={15} color="var(--danger)" />
+                  <span>Emergency Contact: <strong style={{ color: 'var(--danger)' }}>{viewPatient.emergencyContact || 'None provided'}</strong></span>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button type="button" className="btn btn-secondary" onClick={() => setViewPatient(null)}>
+                Close
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  const pat = viewPatient;
+                  setViewPatient(null);
+                  openEditModal(pat);
+                }}
+              >
+                <Edit2 size={15} /> Edit Patient
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit Patient Modal */}
       {editModal && (

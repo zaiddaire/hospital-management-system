@@ -1,6 +1,8 @@
 package com.hospital.service;
 
 import com.hospital.dto.AppointmentDTO;
+import com.hospital.dto.AppointmentRescheduleDTO;
+import com.hospital.dto.AppointmentRescheduleHistoryDTO;
 import com.hospital.entity.*;
 import com.hospital.exception.BadRequestException;
 import com.hospital.exception.ResourceNotFoundException;
@@ -9,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,6 +23,7 @@ public class AppointmentService {
     private final AppointmentRepository appointmentRepository;
     private final PatientRepository patientRepository;
     private final DoctorRepository doctorRepository;
+    private final AppointmentRescheduleHistoryRepository rescheduleHistoryRepository;
 
     public List<AppointmentDTO> getAllAppointments() {
         return appointmentRepository.findAll().stream()
@@ -76,6 +81,67 @@ public class AppointmentService {
     }
 
     @Transactional
+    public AppointmentDTO rescheduleAppointment(Long id, AppointmentRescheduleDTO dto, Long currentUserId, String currentRole, String currentName) {
+        Appointment appointment = appointmentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment", "id", id));
+
+        if (appointment.getStatus() == AppointmentStatus.COMPLETED) {
+            throw new BadRequestException("Completed appointments cannot be rescheduled");
+        }
+        if (appointment.getStatus() == AppointmentStatus.CANCELLED) {
+            throw new BadRequestException("Cancelled appointments cannot be rescheduled");
+        }
+
+        LocalDate today = LocalDate.now();
+        if (dto.getNewDate().isBefore(today)) {
+            throw new BadRequestException("Cannot reschedule to a past date");
+        }
+        if (dto.getNewDate().isEqual(today) && dto.getNewTime().isBefore(LocalTime.now())) {
+            throw new BadRequestException("Cannot reschedule to a past time slot today");
+        }
+
+        boolean slotTaken = appointmentRepository
+                .existsByDoctorIdAndAppointmentDateAndAppointmentTime(
+                        appointment.getDoctor().getId(), dto.getNewDate(), dto.getNewTime());
+        if (slotTaken) {
+            throw new BadRequestException("This time slot is already booked for the selected doctor");
+        }
+
+        LocalDate oldDate = appointment.getAppointmentDate();
+        LocalTime oldTime = appointment.getAppointmentTime();
+
+        appointment.setAppointmentDate(dto.getNewDate());
+        appointment.setAppointmentTime(dto.getNewTime());
+        appointmentRepository.save(appointment);
+
+        AppointmentRescheduleHistory history = new AppointmentRescheduleHistory();
+        history.setAppointmentId(id);
+        history.setPatientId(appointment.getPatient().getId());
+        history.setDoctorId(appointment.getDoctor().getId());
+        history.setOldAppointmentDate(oldDate);
+        history.setOldAppointmentTime(oldTime);
+        history.setNewAppointmentDate(dto.getNewDate());
+        history.setNewAppointmentTime(dto.getNewTime());
+        history.setChangedByUserId(currentUserId != null ? currentUserId : 1L);
+        history.setChangedByRole(currentRole != null ? currentRole : "PATIENT");
+        history.setChangedByName(currentName != null ? currentName : "User");
+        history.setReason(dto.getReason());
+        history.setPreviousStatus(appointment.getStatus().name());
+        history.setNewStatus(appointment.getStatus().name());
+
+        rescheduleHistoryRepository.save(history);
+
+        return toDTO(appointment);
+    }
+
+    public List<AppointmentRescheduleHistoryDTO> getAppointmentHistory(Long appointmentId) {
+        return rescheduleHistoryRepository.findByAppointmentIdOrderByCreatedAtDesc(appointmentId)
+                .stream()
+                .map(this::toHistoryDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
     public AppointmentDTO updateAppointmentStatus(Long id, String status) {
         Appointment appointment = appointmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Appointment", "id", id));
@@ -110,6 +176,26 @@ public class AppointmentService {
                 .appointmentTime(appointment.getAppointmentTime())
                 .reason(appointment.getReason())
                 .status(appointment.getStatus().name())
+                .build();
+    }
+
+    private AppointmentRescheduleHistoryDTO toHistoryDTO(AppointmentRescheduleHistory h) {
+        return AppointmentRescheduleHistoryDTO.builder()
+                .id(h.getId())
+                .appointmentId(h.getAppointmentId())
+                .patientId(h.getPatientId())
+                .doctorId(h.getDoctorId())
+                .oldAppointmentDate(h.getOldAppointmentDate())
+                .oldAppointmentTime(h.getOldAppointmentTime())
+                .newAppointmentDate(h.getNewAppointmentDate())
+                .newAppointmentTime(h.getNewAppointmentTime())
+                .changedByUserId(h.getChangedByUserId())
+                .changedByRole(h.getChangedByRole())
+                .changedByName(h.getChangedByName())
+                .reason(h.getReason())
+                .previousStatus(h.getPreviousStatus())
+                .newStatus(h.getNewStatus())
+                .createdAt(h.getCreatedAt())
                 .build();
     }
 }

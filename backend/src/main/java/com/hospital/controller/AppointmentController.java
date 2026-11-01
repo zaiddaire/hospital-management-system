@@ -1,6 +1,8 @@
 package com.hospital.controller;
 
 import com.hospital.dto.AppointmentDTO;
+import com.hospital.dto.AppointmentRescheduleDTO;
+import com.hospital.dto.AppointmentRescheduleHistoryDTO;
 import com.hospital.service.AppointmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +47,19 @@ public class AppointmentController {
     public ResponseEntity<AppointmentDTO> createAppointment(
             @Valid @RequestBody AppointmentDTO appointmentDTO) {
         return ResponseEntity.ok(appointmentService.createAppointment(appointmentDTO));
+    }
+
+    @PostMapping("/{id}/reschedule")
+    public ResponseEntity<AppointmentDTO> rescheduleAppointment(
+            @PathVariable Long id,
+            @Valid @RequestBody AppointmentRescheduleDTO dto) {
+        return ResponseEntity.ok(appointmentService.rescheduleAppointment(id, dto, null, null, null));
+    }
+
+    @GetMapping("/{id}/history")
+    public ResponseEntity<List<AppointmentRescheduleHistoryDTO>> getAppointmentHistory(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(appointmentService.getAppointmentHistory(id));
     }
 
     @PatchMapping("/{id}/status")

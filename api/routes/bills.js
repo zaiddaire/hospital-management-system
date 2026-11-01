@@ -1,5 +1,5 @@
 import express from 'express';
-import { getPool, memoryStore, initializeDatabase } from '../db.js';
+import { getPool, memoryStore, initializeDatabase, saveMemoryStore, formatDate } from '../db.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -13,7 +13,7 @@ function mapBill(row) {
     appointmentId: row.appointment_id || null,
     description: row.description || '',
     amount: Number(row.amount) || 0,
-    billDate: row.bill_date ? String(row.bill_date).split('T')[0] : null,
+    billDate: formatDate(row.bill_date),
     paymentStatus: row.payment_status || 'PENDING',
   };
 }
@@ -150,6 +150,7 @@ router.post('/', authenticate, authorize('ADMIN', 'DOCTOR'), async (req, res) =>
         payment_status: 'PENDING',
       };
       memoryStore.bills.push(newBill);
+      saveMemoryStore();
 
       const p = memoryStore.patients.find(pat => pat.id === Number(patientId));
       return res.json(mapBill({ ...newBill, patient_name: p?.full_name }));
@@ -180,6 +181,7 @@ router.patch('/:id/payment', authenticate, authorize('ADMIN'), async (req, res) 
       const b = memoryStore.bills.find(bill => bill.id === id);
       if (!b) return res.status(404).json({ message: 'Bill not found' });
       b.payment_status = status;
+      saveMemoryStore();
       const p = memoryStore.patients.find(pat => pat.id === b.patient_id);
       return res.json(mapBill({ ...b, patient_name: p?.full_name }));
     }

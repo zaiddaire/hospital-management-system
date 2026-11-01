@@ -1,5 +1,5 @@
 import express from 'express';
-import { getPool, memoryStore, initializeDatabase } from '../db.js';
+import { getPool, memoryStore, initializeDatabase, formatDate } from '../db.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -72,7 +72,7 @@ router.get('/doctors', authenticate, authorize('ADMIN'), async (req, res) => {
         departmentId: r.department_id,
         departmentName: r.department_name || '',
         fullName: r.full_name,
-        dateOfBirth: r.date_of_birth ? String(r.date_of_birth).split('T')[0] : null,
+        dateOfBirth: formatDate(r.date_of_birth),
         gender: r.gender,
         phone: r.phone,
         specialization: r.specialization,
@@ -131,7 +131,7 @@ router.get('/patients', authenticate, authorize('ADMIN'), async (req, res) => {
         username: r.username,
         email: r.email,
         fullName: r.full_name,
-        dateOfBirth: r.date_of_birth ? String(r.date_of_birth).split('T')[0] : null,
+        dateOfBirth: formatDate(r.date_of_birth),
         gender: r.gender,
         bloodGroup: r.blood_group,
         phone: r.phone,

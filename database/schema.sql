@@ -109,6 +109,33 @@ CREATE TABLE IF NOT EXISTS appointments (
 );
 
 -- =====================
+-- Appointment Reschedule History Table (Audit Trail)
+-- =====================
+CREATE TABLE IF NOT EXISTS appointment_reschedule_history (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    appointment_id BIGINT NOT NULL,
+    patient_id BIGINT NOT NULL,
+    doctor_id BIGINT NOT NULL,
+    old_appointment_date DATE NOT NULL,
+    old_appointment_time TIME NOT NULL,
+    new_appointment_date DATE NOT NULL,
+    new_appointment_time TIME NOT NULL,
+    changed_by_user_id BIGINT NOT NULL,
+    changed_by_role VARCHAR(20) NOT NULL,
+    changed_by_name VARCHAR(100),
+    reason TEXT,
+    previous_status VARCHAR(20),
+    new_status VARCHAR(20),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE CASCADE,
+    FOREIGN KEY (patient_id) REFERENCES patients(id),
+    FOREIGN KEY (doctor_id) REFERENCES doctors(id),
+    INDEX idx_reschedule_appt (appointment_id),
+    INDEX idx_reschedule_patient (patient_id),
+    INDEX idx_reschedule_doctor (doctor_id)
+);
+
+-- =====================
 -- Medical Records Table
 -- =====================
 CREATE TABLE IF NOT EXISTS medical_records (

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import {
   Stethoscope, Search, Plus, Phone, Mail, Building2,
-  Calendar, Award, DollarSign, Clock, Trash2, Edit2, X, Check
+  Calendar, Award, DollarSign, Clock, Trash2, Edit2, X, Check, Eye
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -20,6 +20,7 @@ export default function DoctorsPage() {
   // Modal states
   const [showModal, setShowModal] = useState(false);
   const [editingDoctor, setEditingDoctor] = useState(null);
+  const [viewDoctor, setViewDoctor] = useState(null);
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -233,7 +234,16 @@ export default function DoctorsPage() {
                   )}
                 </div>
 
-                <div style={{ marginTop: 'auto', display: 'flex', gap: '8px', borderTop: '1px solid var(--glass-border)', paddingTop: '14px' }}>
+                <div style={{ marginTop: 'auto', display: 'flex', gap: '8px', borderTop: '1px solid var(--glass-border)', paddingTop: '14px', alignItems: 'center' }}>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => setViewDoctor(doc)}
+                    title="View full doctor profile"
+                    style={{ padding: '8px 10px' }}
+                  >
+                    <Eye size={15} />
+                  </button>
+
                   {isPatient() && (
                     <button
                       className="btn btn-primary"
@@ -260,6 +270,95 @@ export default function DoctorsPage() {
           </div>
         )}
       </div>
+
+      {/* View Doctor Profile Modal */}
+      {viewDoctor && (
+        <div className="modal-overlay" onClick={() => setViewDoctor(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 520 }}>
+            <div className="modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <Stethoscope size={20} color="var(--primary-400)" />
+                <h3>Dr. {viewDoctor.fullName}</h3>
+              </div>
+              <button className="modal-close" onClick={() => setViewDoctor(null)}><X size={18} /></button>
+            </div>
+
+            <div className="modal-body">
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 16,
+                padding: '16px',
+                background: 'rgba(255,255,255,0.03)',
+                borderRadius: 'var(--radius-lg)',
+                marginBottom: '18px'
+              }}>
+                <div className="sidebar-avatar" style={{ width: 56, height: 56, fontSize: 22, flexShrink: 0 }}>
+                  {viewDoctor.fullName ? viewDoctor.fullName[0].toUpperCase() : 'D'}
+                </div>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '17px', color: 'var(--surface-50)' }}>Dr. {viewDoctor.fullName}</h4>
+                  <div style={{ fontSize: '13px', color: 'var(--primary-400)', fontWeight: 600, marginTop: 2 }}>
+                    {viewDoctor.specialization} &bull; {viewDoctor.departmentName}
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--surface-400)', marginTop: 2 }}>
+                    {viewDoctor.qualification} ({viewDoctor.experienceYears} Years Experience)
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 18 }}>
+                <div style={{ padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)' }}>
+                  <div style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--surface-500)', fontWeight: 700 }}>Consultation Fee</div>
+                  <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--primary-300)', marginTop: 4 }}>
+                    ₹{viewDoctor.consultationFee}
+                  </div>
+                </div>
+                <div style={{ padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: 'var(--radius-md)', border: '1px solid var(--glass-border)' }}>
+                  <div style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--surface-500)', fontWeight: 700 }}>Working Schedule</div>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--surface-100)', marginTop: 4 }}>
+                    {viewDoctor.availability || 'Mon-Fri 9AM-5PM'}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: '13px', color: 'var(--surface-300)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Phone size={15} color="var(--primary-400)" />
+                  <span>Phone: {viewDoctor.phone || 'Not listed'}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Mail size={15} color="var(--primary-400)" />
+                  <span>Email: {viewDoctor.email || 'Not listed'}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <Building2 size={15} color="var(--primary-400)" />
+                  <span>Department: {viewDoctor.departmentName}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button type="button" className="btn btn-secondary" onClick={() => setViewDoctor(null)}>
+                Close
+              </button>
+              {isPatient() && (
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => {
+                    const doc = viewDoctor;
+                    setViewDoctor(null);
+                    navigate('/appointments', { state: { doctorId: doc.id, doctorName: doc.fullName } });
+                  }}
+                >
+                  <Calendar size={16} /> Book Appointment
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal for Add / Edit Doctor */}
       {showModal && (

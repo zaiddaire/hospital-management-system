@@ -1,5 +1,5 @@
 import express from 'express';
-import { getPool, memoryStore, initializeDatabase } from '../db.js';
+import { getPool, memoryStore, initializeDatabase, saveMemoryStore } from '../db.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -76,6 +76,7 @@ router.post('/', authenticate, authorize('ADMIN'), async (req, res) => {
         is_active: true,
       };
       memoryStore.departments.push(newDept);
+      saveMemoryStore();
       return res.json(newDept);
     }
   } catch (err) {
@@ -106,6 +107,7 @@ router.put('/:id', authenticate, authorize('ADMIN'), async (req, res) => {
       if (!dept) return res.status(404).json({ message: 'Department not found' });
       if (name) dept.name = name;
       if (description !== undefined) dept.description = description;
+      saveMemoryStore();
       return res.json(dept);
     }
   } catch (err) {

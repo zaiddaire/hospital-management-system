@@ -1,0 +1,364 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "username": "admin",
+      "email": "admin@hospital.com",
+      "password": "$2a$10$HxVNB.P1bC50KH.a7PS30eCKWAs2RCEUk7ttpSf5EKXKvNyw5PZCa",
+      "role": "ADMIN",
+      "is_active": true
+    },
+    {
+      "id": 2,
+      "username": "dr.sharma",
+      "email": "sharma@hospital.com",
+      "password": "$2a$10$D/yqkXriBHysNkpKlD.g3uBBEwHcBbbsT1KaRbLolB59a7cEpFjgq",
+      "role": "DOCTOR",
+      "is_active": true
+    },
+    {
+      "id": 3,
+      "username": "dr.patel",
+      "email": "patel@hospital.com",
+      "password": "$2a$10$DBtNBEaKSOBEH147z1gTteNThu/i8fq99zj6mEavHtCWXbrvSxvTu",
+      "role": "DOCTOR",
+      "is_active": true
+    },
+    {
+      "id": 4,
+      "username": "dr.gupta",
+      "email": "gupta@hospital.com",
+      "password": "$2a$10$w.J2BVRIPCZnuDuzL6xHduGqsytGCVEwbxR1bOOgQRhWndFzwtuCS",
+      "role": "DOCTOR",
+      "is_active": true
+    },
+    {
+      "id": 5,
+      "username": "dr.mehta",
+      "email": "mehta@hospital.com",
+      "password": "$2a$10$XFLjczomNbFkPHyKAuB9J.YutxBdZQWTHVaaaIML.eo/9IrdPfh5e",
+      "role": "DOCTOR",
+      "is_active": true
+    },
+    {
+      "id": 6,
+      "username": "dr.reddy",
+      "email": "reddy@hospital.com",
+      "password": "$2a$10$XeLfnsbvP3UAA6wdtMOQVu3nzV9HopXyp26.hhiQIrbjUoJESJnVa",
+      "role": "DOCTOR",
+      "is_active": true
+    },
+    {
+      "id": 7,
+      "username": "dr.singh",
+      "email": "singh@hospital.com",
+      "password": "$2a$10$xEoNyv4GQcLgFXB.pymC3OIq0VLl3yWZdttXDHkqKRdd4Maal95WG",
+      "role": "DOCTOR",
+      "is_active": true
+    },
+    {
+      "id": 8,
+      "username": "rahul.kumar",
+      "email": "rahul@email.com",
+      "password": "$2a$10$YidH4ulI7SPJz5nRjkREUOmcUy0HrQBTrWvCkAahFAHdp/ZNAuVcu",
+      "role": "PATIENT",
+      "is_active": true
+    },
+    {
+      "id": 9,
+      "username": "priya.sharma",
+      "email": "priya.s@email.com",
+      "password": "$2a$10$z5r86nXvhHCn5lslaEtHy.DdjJ/HEQjxrW1uaiXCvNJY.ZxtsOA82",
+      "role": "PATIENT",
+      "is_active": true
+    },
+    {
+      "id": 10,
+      "username": "amit.verma",
+      "email": "amit.v@email.com",
+      "password": "$2a$10$vvnk5gbN15YH0asM2hVgVeMJ.MXad66BBNzR.D00CAUCiVIeZ.0pq",
+      "role": "PATIENT",
+      "is_active": true
+    },
+    {
+      "id": 11,
+      "username": "sneha.das",
+      "email": "sneha.d@email.com",
+      "password": "$2a$10$9cnhSIjoMJXfHjygLua.gezT.btfn7b7fswj.nQ6loKrOwY9KbPI6",
+      "role": "PATIENT",
+      "is_active": true
+    }
+  ],
+  "departments": [
+    {
+      "id": 1,
+      "name": "Cardiology",
+      "description": "Heart and cardiovascular system diagnosis and treatment",
+      "is_active": true
+    },
+    {
+      "id": 2,
+      "name": "Neurology",
+      "description": "Brain, spinal cord and nervous system disorders",
+      "is_active": true
+    },
+    {
+      "id": 3,
+      "name": "Orthopedics",
+      "description": "Musculoskeletal system - bones, joints, ligaments and muscles",
+      "is_active": true
+    },
+    {
+      "id": 4,
+      "name": "Pediatrics",
+      "description": "Medical care for infants, children and adolescents",
+      "is_active": true
+    },
+    {
+      "id": 5,
+      "name": "Dermatology",
+      "description": "Skin, hair and nail conditions diagnosis and treatment",
+      "is_active": true
+    },
+    {
+      "id": 6,
+      "name": "General Medicine",
+      "description": "Primary care and internal medicine services",
+      "is_active": true
+    },
+    {
+      "id": 7,
+      "name": "ENT",
+      "description": "Ear, Nose and Throat disorders and treatment",
+      "is_active": true
+    },
+    {
+      "id": 8,
+      "name": "Gynecology",
+      "description": "Female reproductive system health and care",
+      "is_active": true
+    }
+  ],
+  "doctors": [
+    {
+      "id": 1,
+      "user_id": 2,
+      "department_id": 1,
+      "full_name": "Dr. Rajesh Sharma",
+      "gender": "MALE",
+      "phone": "+91 98765 43210",
+      "specialization": "Cardiologist",
+      "qualification": "MBBS, MD, DM (Cardiology)",
+      "experience_years": 15,
+      "consultation_fee": 800,
+      "availability": "Mon-Fri 9:00 AM - 1:00 PM",
+      "is_active": true
+    },
+    {
+      "id": 2,
+      "user_id": 3,
+      "department_id": 2,
+      "full_name": "Dr. Priya Patel",
+      "gender": "FEMALE",
+      "phone": "+91 98765 43211",
+      "specialization": "Neurologist",
+      "qualification": "MBBS, MD, DM (Neurology)",
+      "experience_years": 12,
+      "consultation_fee": 900,
+      "availability": "Mon-Thu 10:00 AM - 2:00 PM",
+      "is_active": true
+    },
+    {
+      "id": 3,
+      "user_id": 4,
+      "department_id": 3,
+      "full_name": "Dr. Amit Gupta",
+      "gender": "MALE",
+      "phone": "+91 98765 43212",
+      "specialization": "Orthopedic Surgeon",
+      "qualification": "MBBS, MS (Orthopedics)",
+      "experience_years": 10,
+      "consultation_fee": 700,
+      "availability": "Tue-Sat 9:00 AM - 1:00 PM",
+      "is_active": true
+    },
+    {
+      "id": 4,
+      "user_id": 5,
+      "department_id": 4,
+      "full_name": "Dr. Sunita Mehta",
+      "gender": "FEMALE",
+      "phone": "+91 98765 43213",
+      "specialization": "Pediatrician",
+      "qualification": "MBBS, MD (Pediatrics)",
+      "experience_years": 8,
+      "consultation_fee": 600,
+      "availability": "Mon-Fri 2:00 PM - 6:00 PM",
+      "is_active": true
+    },
+    {
+      "id": 5,
+      "user_id": 6,
+      "department_id": 5,
+      "full_name": "Dr. Vikram Reddy",
+      "gender": "MALE",
+      "phone": "+91 98765 43214",
+      "specialization": "Dermatologist",
+      "qualification": "MBBS, MD (Dermatology)",
+      "experience_years": 7,
+      "consultation_fee": 650,
+      "availability": "Mon-Sat 11:00 AM - 3:00 PM",
+      "is_active": true
+    },
+    {
+      "id": 6,
+      "user_id": 7,
+      "department_id": 6,
+      "full_name": "Dr. Ananya Singh",
+      "gender": "FEMALE",
+      "phone": "+91 98765 43215",
+      "specialization": "General Physician",
+      "qualification": "MBBS, MD (Medicine)",
+      "experience_years": 14,
+      "consultation_fee": 500,
+      "availability": "Mon-Sat 9:00 AM - 5:00 PM",
+      "is_active": true
+    }
+  ],
+  "patients": [
+    {
+      "id": 1,
+      "user_id": 8,
+      "full_name": "Rahul Kumar",
+      "date_of_birth": "1990-03-15",
+      "gender": "MALE",
+      "blood_group": "O_POSITIVE",
+      "phone": "+91 98111 22233",
+      "address": "A-42, Sector 62, Noida, UP",
+      "emergency_contact": "+91 98111 22230"
+    },
+    {
+      "id": 2,
+      "user_id": 9,
+      "full_name": "Priya Sharma",
+      "date_of_birth": "1995-07-22",
+      "gender": "FEMALE",
+      "blood_group": "B_POSITIVE",
+      "phone": "+91 98222 33344",
+      "address": "12/B, MG Road, Bengaluru, KA",
+      "emergency_contact": "+91 98222 33340"
+    },
+    {
+      "id": 3,
+      "user_id": 10,
+      "full_name": "Amit Verma",
+      "date_of_birth": "1988-11-05",
+      "gender": "MALE",
+      "blood_group": "A_POSITIVE",
+      "phone": "+91 98333 44455",
+      "address": "78, Park Street, Kolkata, WB",
+      "emergency_contact": "+91 98333 44450"
+    },
+    {
+      "id": 4,
+      "user_id": 11,
+      "full_name": "Sneha Das",
+      "date_of_birth": "1992-09-18",
+      "gender": "FEMALE",
+      "blood_group": "AB_POSITIVE",
+      "phone": "+91 98444 55566",
+      "address": "45, Jubilee Hills, Hyderabad, TS",
+      "emergency_contact": "+91 98444 55560"
+    }
+  ],
+  "appointments": [
+    {
+      "id": 1,
+      "patient_id": 1,
+      "doctor_id": 1,
+      "appointment_date": "2026-11-01",
+      "appointment_time": "10:00:00",
+      "reason": "Chest pain and shortness of breath",
+      "status": "CONFIRMED"
+    },
+    {
+      "id": 2,
+      "patient_id": 2,
+      "doctor_id": 2,
+      "appointment_date": "2026-11-01",
+      "appointment_time": "11:30:00",
+      "reason": "Persistent headache and dizziness",
+      "status": "COMPLETED"
+    },
+    {
+      "id": 3,
+      "patient_id": 3,
+      "doctor_id": 3,
+      "appointment_date": "2026-11-01",
+      "appointment_time": "14:00:00",
+      "reason": "Knee pain while walking",
+      "status": "PENDING"
+    }
+  ],
+  "appointment_history": [],
+  "medical_records": [
+    {
+      "id": 1,
+      "patient_id": 2,
+      "doctor_id": 2,
+      "appointment_id": 2,
+      "visit_date": "2026-11-01",
+      "symptoms": "Migraine-like headache, photophobia, nausea",
+      "diagnosis": "Acute Migraine without aura",
+      "treatment_notes": "Prescribed NSAIDs and antiemetic. Rest in quiet, dark room."
+    }
+  ],
+  "prescriptions": [
+    {
+      "id": 1,
+      "medical_record_id": 1,
+      "patient_id": 2,
+      "doctor_id": 2,
+      "medicine_name": "Sumatriptan",
+      "dosage": "50mg",
+      "frequency": "At onset of headache",
+      "duration": "As needed",
+      "instructions": "Take with water at first sign of migraine",
+      "prescription_date": "2026-11-01"
+    },
+    {
+      "id": 2,
+      "medical_record_id": 1,
+      "patient_id": 2,
+      "doctor_id": 2,
+      "medicine_name": "Domperidone",
+      "dosage": "10mg",
+      "frequency": "Twice daily before meals",
+      "duration": "3 days",
+      "instructions": "Take 30 mins before food for nausea",
+      "prescription_date": "2026-11-01"
+    }
+  ],
+  "bills": [
+    {
+      "id": 1,
+      "bill_number": "BILL-1001",
+      "patient_id": 2,
+      "appointment_id": 2,
+      "description": "Neurology Consultation & Diagnostic Checkup",
+      "amount": 900,
+      "bill_date": "2026-11-01",
+      "payment_status": "PAID"
+    },
+    {
+      "id": 2,
+      "bill_number": "BILL-1002",
+      "patient_id": 1,
+      "appointment_id": 1,
+      "description": "Cardiology OPD Consultation",
+      "amount": 800,
+      "bill_date": "2026-11-01",
+      "payment_status": "PENDING"
+    }
+  ]
+}

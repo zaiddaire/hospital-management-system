@@ -1,7 +1,7 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { getPool, memoryStore, initializeDatabase } from '../db.js';
+import { getPool, memoryStore, initializeDatabase, saveMemoryStore } from '../db.js';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'HospitalManagementSystemSecretKeyForJWTTokenGeneration2024SecureKey';
@@ -180,6 +180,8 @@ router.post('/register', async (req, res) => {
           emergency_contact: '',
         });
       }
+
+      saveMemoryStore();
 
       const payload = {
         sub: username,

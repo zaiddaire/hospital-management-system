@@ -1,5 +1,5 @@
 import express from 'express';
-import { getPool, memoryStore, initializeDatabase } from '../db.js';
+import { getPool, memoryStore, initializeDatabase, saveMemoryStore, formatDate } from '../db.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -12,7 +12,7 @@ function mapRecord(rec, prescriptions = []) {
     doctorId: rec.doctor_id,
     doctorName: rec.doctor_name || '',
     appointmentId: rec.appointment_id || null,
-    visitDate: rec.visit_date ? String(rec.visit_date).split('T')[0] : null,
+    visitDate: formatDate(rec.visit_date),
     symptoms: rec.symptoms || '',
     diagnosis: rec.diagnosis || '',
     treatmentNotes: rec.treatment_notes || '',
@@ -26,7 +26,7 @@ function mapRecord(rec, prescriptions = []) {
       frequency: p.frequency,
       duration: p.duration,
       instructions: p.instructions,
-      prescriptionDate: p.prescription_date ? String(p.prescription_date).split('T')[0] : null,
+      prescriptionDate: formatDate(p.prescription_date),
     })),
   };
 }
@@ -264,6 +264,8 @@ router.post('/', authenticate, authorize('ADMIN', 'DOCTOR'), async (req, res) =>
         const appt = memoryStore.appointments.find(a => a.id === Number(appointmentId));
         if (appt) appt.status = 'COMPLETED';
       }
+
+      saveMemoryStore();
 
       const p = memoryStore.patients.find(pat => pat.id === Number(patientId));
       const d = memoryStore.doctors.find(doc => doc.id === Number(doctorId));

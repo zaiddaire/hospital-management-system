@@ -1,5 +1,5 @@
 import express from 'express';
-import { getPool, memoryStore, initializeDatabase } from '../db.js';
+import { getPool, memoryStore, initializeDatabase, saveMemoryStore, formatDate } from '../db.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -11,7 +11,7 @@ function mapPatient(row) {
     username: row.username,
     email: row.email,
     fullName: row.full_name,
-    dateOfBirth: row.date_of_birth ? String(row.date_of_birth).split('T')[0] : null,
+    dateOfBirth: formatDate(row.date_of_birth),
     gender: row.gender,
     bloodGroup: row.blood_group,
     phone: row.phone,
@@ -157,6 +157,7 @@ router.put('/:id', authenticate, async (req, res) => {
       if (emergencyContact !== undefined) p.emergency_contact = emergencyContact;
 
       const u = memoryStore.users.find(user => user.id === p.user_id);
+      saveMemoryStore();
       return res.json(mapPatient({ ...p, username: u?.username, email: u?.email }));
     }
   } catch (err) {

@@ -1,8 +1,16 @@
 import mysql from 'mysql2/promise';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const DATA_DIR = path.join(__dirname, 'data');
+const DATA_FILE = path.join(DATA_DIR, 'hospital_data.json');
 
 // Parse MySQL connection options from DB_URL or individual environment variables
 export function parseDbConfig() {
@@ -53,17 +61,64 @@ export function parseDbConfig() {
 let pool = null;
 let isInitialized = false;
 
-// In-memory fallback storage if remote MySQL is unavailable or offline
+// Fallback storage (with file persistence) if remote MySQL is unavailable or offline
 const memoryStore = {
   users: [],
   departments: [],
   doctors: [],
   patients: [],
   appointments: [],
+  appointment_history: [],
   medical_records: [],
   prescriptions: [],
   bills: [],
 };
+
+export function saveMemoryStore() {
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    fs.writeFileSync(DATA_FILE, JSON.stringify(memoryStore, null, 2), 'utf8');
+  } catch (err) {
+    // In serverless read-only contexts, fallback gracefully
+    console.warn('[DB] Could not save store to file:', err.message);
+  }
+}
+
+export function loadMemoryStore() {
+  try {
+    if (fs.existsSync(DATA_FILE)) {
+      const content = fs.readFileSync(DATA_FILE, 'utf8');
+      const parsed = JSON.parse(content);
+      for (const key of Object.keys(memoryStore)) {
+        if (Array.isArray(parsed[key])) {
+          memoryStore[key] = parsed[key];
+        }
+      }
+      return true;
+    }
+  } catch (err) {
+    console.warn('[DB] Could not load store from file:', err.message);
+  }
+  return false;
+}
+
+export function formatDate(val) {
+  if (!val) return null;
+  if (typeof val === 'string') {
+    if (val.includes('T')) return val.split('T')[0];
+    if (/^\d{4}-\d{2}-\d{2}/.test(val)) return val.slice(0, 10);
+    return val;
+  }
+  if (val instanceof Date) {
+    const y = val.getFullYear();
+    const m = String(val.getMonth() + 1).padStart(2, '0');
+    const d = String(val.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  return String(val);
+}
 
 let useMemoryStore = false;
 let nextId = 100;
@@ -81,6 +136,7 @@ export async function getPool() {
       password: config.password,
       database: config.database,
       ssl: config.ssl || undefined,
+      dateStrings: true,
       waitForConnections: true,
       connectionLimit: 10,
       queueLimit: 0,
@@ -254,6 +310,32 @@ export async function initializeDatabase() {
         );
       `);
 
+      await activePool.query(`
+        CREATE TABLE IF NOT EXISTS appointment_reschedule_history (
+          id BIGINT AUTO_INCREMENT PRIMARY KEY,
+          appointment_id BIGINT NOT NULL,
+          patient_id BIGINT NOT NULL,
+          doctor_id BIGINT NOT NULL,
+          old_appointment_date DATE NOT NULL,
+          old_appointment_time TIME NOT NULL,
+          new_appointment_date DATE NOT NULL,
+          new_appointment_time TIME NOT NULL,
+          changed_by_user_id BIGINT NOT NULL,
+          changed_by_role VARCHAR(20) NOT NULL,
+          changed_by_name VARCHAR(100),
+          reason TEXT,
+          previous_status VARCHAR(20),
+          new_status VARCHAR(20),
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE CASCADE,
+          FOREIGN KEY (patient_id) REFERENCES patients(id),
+          FOREIGN KEY (doctor_id) REFERENCES doctors(id),
+          INDEX idx_reschedule_appt (appointment_id),
+          INDEX idx_reschedule_patient (patient_id),
+          INDEX idx_reschedule_doctor (doctor_id)
+        );
+      `);
+
       // Check if seeded
       const [users] = await activePool.query('SELECT COUNT(*) as count FROM users');
       if (users[0].count === 0) {
@@ -264,10 +346,14 @@ export async function initializeDatabase() {
       console.error('[DB] Error during MySQL initialization:', e.message);
     }
   } else {
-    // Seed in-memory store
-    if (memoryStore.users.length === 0) {
+    // Check if persistent store on disk exists
+    const loaded = loadMemoryStore();
+    if (!loaded || memoryStore.users.length === 0) {
       console.log('[DB] Seeding in-memory store with default test accounts...');
       seedMemoryData();
+      saveMemoryStore();
+    } else {
+      console.log('[DB] Loaded existing persistent data from disk.');
     }
   }
 
@@ -456,6 +542,8 @@ function seedMemoryData() {
     { id: 2, patient_id: 2, doctor_id: 2, appointment_date: today, appointment_time: '11:30:00', reason: 'Persistent headache and dizziness', status: 'COMPLETED' },
     { id: 3, patient_id: 3, doctor_id: 3, appointment_date: today, appointment_time: '14:00:00', reason: 'Knee pain while walking', status: 'PENDING' }
   ];
+
+  memoryStore.appointment_history = [];
 
   memoryStore.medical_records = [
     { id: 1, patient_id: 2, doctor_id: 2, appointment_id: 2, visit_date: today, symptoms: 'Migraine-like headache, photophobia, nausea', diagnosis: 'Acute Migraine without aura', treatment_notes: 'Prescribed NSAIDs and antiemetic. Rest in quiet, dark room.' }
